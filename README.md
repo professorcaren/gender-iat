@@ -35,3 +35,8 @@ To produce a single standalone HTML file:
 ```bash
 bash bundle-artifact.sh
 ```
+
+## Roadmap
+
+- [ ] Add live class leaderboard/histogram (Firebase, fallback to Google Sheets)
+- [ ] Build college majors gender-association game (separate repo in professorcaren org)
