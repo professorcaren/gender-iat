@@ -2,7 +2,7 @@
 
 A game-like Implicit Association Test (IAT) for SOCI 101 lectures. Students open it on their phones during class, complete a ~2-minute speed-sorting activity, and see their results — sparking discussion about implicit bias.
 
-**Live:** https://nealcaren.github.io/gender-iat/
+**Live:** https://professorcaren.github.io/gender-iat/
 
 ## How It Works
 
