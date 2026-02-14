@@ -13,6 +13,11 @@ function formatDScore(value: number | null): string {
   return value.toFixed(2);
 }
 
+function formatPercent(value: number | null): string {
+  if (value === null) return '--';
+  return `${value.toFixed(1)}%`;
+}
+
 function describeAssociation(value: number | null): string {
   if (value === null) return 'No data yet';
   const absValue = Math.abs(value);
@@ -100,43 +105,46 @@ export default function ClassAverageDashboard() {
               Mean difference (Incongruent - Congruent): {diffMs} ms
             </p>
           )}
+          <p className="text-slate-300 text-sm mt-2">
+            Faster on congruent pairing: {formatPercent(summary?.congruentFasterPct ?? null)}
+          </p>
         </div>
 
         <div className="bg-slate-800/60 rounded-2xl p-5 mb-6">
-          <h2 className="text-white text-sm font-bold mb-4">Average Sorting Speed</h2>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-slate-400 text-xs">Male+Boss / Female+Care</p>
-                <p className="text-white font-semibold">{formatMs(summary?.avgCongruentMs ?? null)}</p>
-              </div>
-              <div className="h-7 bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500"
-                  style={{
-                    width: congruentMean !== null && maxMean > 0
-                      ? `${toWidth(congruentMean, maxMean)}%`
-                      : '0%',
-                  }}
-                />
-              </div>
+          <h2 className="text-white text-sm font-bold mb-3">Average Sorting Speed (Overlap)</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div className="rounded-xl bg-slate-800 p-3">
+              <p className="text-blue-300 text-xs mb-1">Male+Boss / Female+Care</p>
+              <p className="text-white font-bold">{formatMs(summary?.avgCongruentMs ?? null)}</p>
             </div>
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-slate-400 text-xs">Female+Boss / Male+Care</p>
-                <p className="text-white font-semibold">{formatMs(summary?.avgIncongruentMs ?? null)}</p>
-              </div>
-              <div className="h-7 bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-500"
-                  style={{
-                    width: incongruentMean !== null && maxMean > 0
-                      ? `${toWidth(incongruentMean, maxMean)}%`
-                      : '0%',
-                  }}
-                />
-              </div>
+            <div className="rounded-xl bg-slate-800 p-3">
+              <p className="text-orange-300 text-xs mb-1">Female+Boss / Male+Care</p>
+              <p className="text-white font-bold">{formatMs(summary?.avgIncongruentMs ?? null)}</p>
             </div>
+          </div>
+
+          <div className="relative h-16 rounded-xl overflow-hidden bg-slate-700/40 border border-slate-600/60">
+            <div
+              className="absolute left-0 top-0 h-full bg-blue-500/70 transition-all duration-500"
+              style={{
+                width: congruentMean !== null && maxMean > 0
+                  ? `${toWidth(congruentMean, maxMean)}%`
+                  : '0%',
+              }}
+            />
+            <div
+              className="absolute left-0 top-0 h-full bg-orange-500/60 transition-all duration-500 mix-blend-screen"
+              style={{
+                width: incongruentMean !== null && maxMean > 0
+                  ? `${toWidth(incongruentMean, maxMean)}%`
+                  : '0%',
+              }}
+            />
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+          </div>
+          <div className="flex justify-between text-[11px] text-slate-400 mt-2">
+            <span>0 ms</span>
+            <span>{maxMean > 0 ? `${Math.round(maxMean)} ms` : '--'}</span>
           </div>
         </div>
 
