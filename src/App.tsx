@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { getBlocks } from './data/stimuli';
 import { calculateScore } from './utils/scoring';
 import type { TrialResult } from './utils/scoring';
@@ -9,6 +9,8 @@ import BlockIntro from './components/BlockIntro';
 import TrialScreen from './components/TrialScreen';
 import BlockStats from './components/BlockStats';
 import ResultsScreen from './components/ResultsScreen';
+import ClassAverageDashboard from './components/ClassAverageDashboard';
+import { submitScoreToSheet } from './lib/googleSheets';
 
 type Screen =
   | 'splash'
@@ -18,13 +20,29 @@ type Screen =
   | 'block_stats'
   | 'results';
 
+function isAdminHash(hash: string): boolean {
+  return hash === '#/admin' || hash.startsWith('#/admin?');
+}
+
 function App() {
+  const [isAdminView, setIsAdminView] = useState(() => isAdminHash(window.location.hash));
   const [screen, setScreen] = useState<Screen>('splash');
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [allResults, setAllResults] = useState<TrialResult[]>([]);
   const [blocks, setBlocks] = useState<BlockConfig[]>(() => getBlocks());
+  const [attemptNumber, setAttemptNumber] = useState(0);
+  const lastSubmittedAttemptRef = useRef<number>(0);
 
   const currentBlock = blocks[currentBlockIndex];
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setIsAdminView(isAdminHash(window.location.hash));
+    };
+
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const handleStart = useCallback(() => {
     setScreen('how_it_works');
@@ -48,6 +66,7 @@ function App() {
       setCurrentBlockIndex(i => i + 1);
       setScreen('block_intro');
     } else {
+      setAttemptNumber(n => n + 1);
       setScreen('results');
     }
   }, [currentBlockIndex]);
@@ -63,6 +82,18 @@ function App() {
     if (screen !== 'results') return null;
     return calculateScore(allResults);
   }, [screen, allResults]);
+
+  useEffect(() => {
+    if (screen !== 'results' || !score || attemptNumber === 0) return;
+    if (lastSubmittedAttemptRef.current === attemptNumber) return;
+
+    lastSubmittedAttemptRef.current = attemptNumber;
+    void submitScoreToSheet(score);
+  }, [screen, score, attemptNumber]);
+
+  if (isAdminView) {
+    return <ClassAverageDashboard />;
+  }
 
   return (
     <>

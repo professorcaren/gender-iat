@@ -1,0 +1,123 @@
+const SHEET_NAME = 'Responses';
+const HEADERS = [
+  'submitted_at',
+  'd_score',
+  'mean_congruent_ms',
+  'mean_incongruent_ms',
+  'interpretation',
+  'app',
+];
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const score = payload.score || {};
+    const sheet = getOrCreateSheet();
+
+    sheet.appendRow([
+      new Date(),
+      asNumber(score.dScore),
+      asNumber(score.meanCongruent),
+      asNumber(score.meanIncongruent),
+      String(score.interpretation || ''),
+      String(payload.app || 'gender-iat'),
+    ]);
+
+    return jsonOutput({ ok: true });
+  } catch (error) {
+    return jsonOutput({ ok: false, error: String(error) });
+  }
+}
+
+function doGet(e) {
+  const action = (e && e.parameter && e.parameter.action) || '';
+  if (action !== 'summary') {
+    return jsonOutput({
+      ok: true,
+      message: 'Use ?action=summary for aggregate class metrics.',
+    });
+  }
+
+  const rows = readRows();
+  if (rows.length === 0) {
+    return jsonOutput({
+      count: 0,
+      avgDScore: null,
+      avgCongruentMs: null,
+      avgIncongruentMs: null,
+      congruentFasterPct: null,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  const avgDScore = average(rows.map(row => row.dScore));
+  const avgCongruentMs = average(rows.map(row => row.meanCongruentMs));
+  const avgIncongruentMs = average(rows.map(row => row.meanIncongruentMs));
+  const congruentFasterCount = rows.filter(
+    row => row.meanCongruentMs < row.meanIncongruentMs
+  ).length;
+
+  return jsonOutput({
+    count: rows.length,
+    avgDScore: round(avgDScore, 3),
+    avgCongruentMs: round(avgCongruentMs, 1),
+    avgIncongruentMs: round(avgIncongruentMs, 1),
+    congruentFasterPct: round((congruentFasterCount / rows.length) * 100, 1),
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+function getOrCreateSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+  }
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADERS);
+  }
+  return sheet;
+}
+
+function readRows() {
+  const sheet = getOrCreateSheet();
+  const values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+
+  return values
+    .slice(1)
+    .map(row => ({
+      dScore: asNumber(row[1]),
+      meanCongruentMs: asNumber(row[2]),
+      meanIncongruentMs: asNumber(row[3]),
+    }))
+    .filter(row =>
+      Number.isFinite(row.dScore) &&
+      Number.isFinite(row.meanCongruentMs) &&
+      Number.isFinite(row.meanIncongruentMs)
+    );
+}
+
+function average(values) {
+  const valid = values.filter(v => Number.isFinite(v));
+  if (valid.length === 0) return NaN;
+  const total = valid.reduce((sum, value) => sum + value, 0);
+  return total / valid.length;
+}
+
+function round(value, digits) {
+  if (!Number.isFinite(value)) return null;
+  const factor = Math.pow(10, digits);
+  return Math.round(value * factor) / factor;
+}
+
+function asNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function jsonOutput(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}

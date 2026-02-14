@@ -24,6 +24,43 @@ pnpm install
 pnpm dev
 ```
 
+## Google Sheets Class Average Setup
+
+This app now supports:
+- Student auto-submit to Google Sheets when they finish.
+- Instructor aggregate dashboard at `/#/admin` (no individual responses shown).
+
+### 1. Create the Google Apps Script endpoint
+
+1. Open a new Google Sheet.
+2. Open **Extensions → Apps Script**.
+3. Paste in `/Users/nealcaren/Documents/GitHub/soci101-games/gender-iat/gender-iat-app/google-apps-script.gs`.
+4. Deploy as **Web app**:
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+5. Copy the Web app URL (ends in `/exec`).
+
+### 2. Add your endpoint URL to the app
+
+Create `.env.local` in `/Users/nealcaren/Documents/GitHub/soci101-games/gender-iat/gender-iat-app`:
+
+```bash
+cp .env.example .env.local
+```
+
+Then set:
+
+```env
+VITE_GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/your-id/exec"
+```
+
+Restart `pnpm dev` after changing env vars.
+
+### 3. Use it in class
+
+- Student URL: normal app URL.
+- Instructor URL: same URL plus `/#/admin`.
+
 ## Build
 
 ```bash
