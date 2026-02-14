@@ -6,25 +6,25 @@ export interface Stimulus {
 }
 
 export const maleNames: Stimulus[] = [
-  { word: 'James', category: 'male' },
-  { word: 'David', category: 'male' },
-  { word: 'Michael', category: 'male' },
-  { word: 'Daniel', category: 'male' },
-  { word: 'Robert', category: 'male' },
-  { word: 'Thomas', category: 'male' },
-  { word: 'William', category: 'male' },
-  { word: 'John', category: 'male' },
+  { word: 'Liam', category: 'male' },
+  { word: 'Noah', category: 'male' },
+  { word: 'Mason', category: 'male' },
+  { word: 'Ethan', category: 'male' },
+  { word: 'Jayden', category: 'male' },
+  { word: 'Mateo', category: 'male' },
+  { word: 'Elijah', category: 'male' },
+  { word: 'Jackson', category: 'male' },
 ];
 
 export const femaleNames: Stimulus[] = [
-  { word: 'Sarah', category: 'female' },
-  { word: 'Emily', category: 'female' },
-  { word: 'Jessica', category: 'female' },
-  { word: 'Ashley', category: 'female' },
-  { word: 'Amanda', category: 'female' },
-  { word: 'Lauren', category: 'female' },
-  { word: 'Hannah', category: 'female' },
-  { word: 'Megan', category: 'female' },
+  { word: 'Olivia', category: 'female' },
+  { word: 'Ava', category: 'female' },
+  { word: 'Sophia', category: 'female' },
+  { word: 'Isabella', category: 'female' },
+  { word: 'Aaliyah', category: 'female' },
+  { word: 'Priya', category: 'female' },
+  { word: 'Amelia', category: 'female' },
+  { word: 'Aria', category: 'female' },
 ];
 
 export const bossWords: Stimulus[] = [
