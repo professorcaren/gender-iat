@@ -59,10 +59,15 @@ function doPost(e) {
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || '';
+
+  if (action === 'priming_summary') {
+    return handlePrimingSummary();
+  }
+
   if (action !== 'summary') {
     return jsonOutput({
       ok: true,
-      message: 'Use ?action=summary for aggregate class metrics.',
+      message: 'Use ?action=summary or ?action=priming_summary.',
     });
   }
 
@@ -91,6 +96,55 @@ function doGet(e) {
     avgCongruentMs: round(avgCongruentMs, 1),
     avgIncongruentMs: round(avgIncongruentMs, 1),
     congruentFasterPct: round((congruentFasterCount / rows.length) * 100, 1),
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+function handlePrimingSummary() {
+  var sheet;
+  try {
+    sheet = getOrCreatePrimingSheet();
+  } catch (_) {
+    return jsonOutput({ responseCount: 0, majors: [], generatedAt: new Date().toISOString() });
+  }
+
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) {
+    return jsonOutput({ responseCount: 0, majors: [], generatedAt: new Date().toISOString() });
+  }
+
+  // Group diffs by major; count unique timestamps as responses
+  var byMajor = {};
+  var timestamps = {};
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    var ts = String(row[0]);
+    var major = String(row[1]);
+    var diff = asNumber(row[4]);
+    if (!Number.isFinite(diff)) continue;
+
+    timestamps[ts] = true;
+
+    if (!byMajor[major]) {
+      byMajor[major] = [];
+    }
+    byMajor[major].push(diff);
+  }
+
+  var majors = [];
+  for (var m in byMajor) {
+    if (!byMajor.hasOwnProperty(m)) continue;
+    var diffs = byMajor[m];
+    majors.push({
+      major: m,
+      avgDiff: round(average(diffs), 1),
+      count: diffs.length,
+    });
+  }
+
+  return jsonOutput({
+    responseCount: Object.keys(timestamps).length,
+    majors: majors,
     generatedAt: new Date().toISOString(),
   });
 }

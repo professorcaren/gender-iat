@@ -70,6 +70,48 @@ export async function submitPrimingScoreToSheet(scores: PrimingMajorScore[]): Pr
   return 'submitted';
 }
 
+export interface PrimingClassMajor {
+  major: string;
+  avgDiff: number;
+  count: number;
+}
+
+export interface PrimingClassSummary {
+  responseCount: number;
+  majors: PrimingClassMajor[];
+  generatedAt: string | null;
+}
+
+export async function fetchPrimingSummaryFromSheet(): Promise<PrimingClassSummary> {
+  const scriptUrl = getScriptUrl();
+  if (!scriptUrl) {
+    throw new Error('Missing VITE_GOOGLE_SCRIPT_URL');
+  }
+
+  const separator = scriptUrl.includes('?') ? '&' : '?';
+  const response = await fetch(`${scriptUrl}${separator}action=priming_summary`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Priming summary request failed (${response.status})`);
+  }
+
+  const data = await response.json() as Record<string, unknown>;
+  const rawMajors = Array.isArray(data.majors) ? data.majors : [];
+
+  return {
+    responseCount: Math.max(0, Math.round(toNumberOrNull(data.responseCount) ?? 0)),
+    majors: rawMajors.map((m: Record<string, unknown>) => ({
+      major: String(m.major || ''),
+      avgDiff: toNumberOrNull(m.avgDiff) ?? 0,
+      count: Math.round(toNumberOrNull(m.count) ?? 0),
+    })).sort((a: PrimingClassMajor, b: PrimingClassMajor) => b.avgDiff - a.avgDiff),
+    generatedAt: typeof data.generatedAt === 'string' ? data.generatedAt : null,
+  };
+}
+
 export async function fetchClassSummaryFromSheet(): Promise<ClassSummary> {
   const scriptUrl = getScriptUrl();
   if (!scriptUrl) {
