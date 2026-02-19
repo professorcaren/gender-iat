@@ -131,7 +131,7 @@ export default function ClassAverageDashboard() {
         {/* IAT Tab */}
         {tab === 'iat' && (
           <>
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-slate-800 rounded-2xl p-4">
                 <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Responses</p>
                 <p className="text-white text-3xl font-black">{summary?.count ?? '--'}</p>
@@ -139,6 +139,10 @@ export default function ClassAverageDashboard() {
               <div className="bg-slate-800 rounded-2xl p-4">
                 <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Average D-Score</p>
                 <p className="text-white text-3xl font-black">{formatDScore(summary?.avgDScore ?? null)}</p>
+              </div>
+              <div className="bg-slate-800 rounded-2xl p-4">
+                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Male–Career Bias</p>
+                <p className="text-white text-3xl font-black">{formatPercent(summary?.congruentFasterPct ?? null)}</p>
               </div>
             </div>
 
