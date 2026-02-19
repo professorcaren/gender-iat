@@ -144,7 +144,7 @@ function App() {
   return (
     <>
       {screen === 'splash' && (
-        <SplashScreen onStart={handleStart} />
+        <SplashScreen onStart={handleStart} onStartPriming={handleStartPriming} />
       )}
       {screen === 'how_it_works' && (
         <HowItWorks onContinue={handleHowItWorksDone} />

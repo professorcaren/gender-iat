@@ -1,14 +1,15 @@
 interface SplashScreenProps {
   onStart: () => void;
+  onStartPriming?: () => void;
 }
 
-export default function SplashScreen({ onStart }: SplashScreenProps) {
+export default function SplashScreen({ onStart, onStartPriming }: SplashScreenProps) {
   return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center bg-slate-900 cursor-pointer select-none"
-      onPointerDown={onStart}
-    >
-      <div className="text-center px-8 animate-fade-in">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-900 select-none">
+      <div
+        className="text-center px-8 animate-fade-in cursor-pointer flex-1 flex flex-col items-center justify-center"
+        onPointerDown={onStart}
+      >
         <h1 className="text-5xl font-black text-white mb-4 tracking-tight">
           Gender IAT
         </h1>
@@ -25,6 +26,15 @@ export default function SplashScreen({ onStart }: SplashScreenProps) {
           </p>
         </div>
       </div>
+
+      {onStartPriming && (
+        <button
+          onPointerDown={(e) => { e.stopPropagation(); onStartPriming(); }}
+          className="mb-4 text-violet-400 hover:text-violet-300 text-sm font-medium transition-colors"
+        >
+          Skip to Major Priming →
+        </button>
+      )}
 
       <p className="absolute bottom-8 text-slate-600 text-xs">
         SOCI 101

@@ -51,7 +51,7 @@ export default function PrimingIntro({ onContinue }: PrimingIntroProps) {
               <span className="text-violet-400 font-bold text-lg">4</span>
             </div>
             <p className="text-slate-300 text-base pt-1.5">
-              60 quick trials, about 2 minutes total
+              30 quick trials, about 1 minute total
             </p>
           </div>
         </div>

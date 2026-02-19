@@ -51,24 +51,18 @@ export function generatePrimingTrials(): PrimingTrial[] {
   const trials: PrimingTrial[] = [];
 
   for (const major of majors) {
-    // 2 male targets
-    for (let i = 0; i < 2; i++) {
-      const target = pickRandom(maleNames);
-      trials.push({
-        major,
-        target,
-        correctSide: 'left', // Male always sorted left
-      });
-    }
-    // 2 female targets
-    for (let i = 0; i < 2; i++) {
-      const target = pickRandom(femaleNames);
-      trials.push({
-        major,
-        target,
-        correctSide: 'right', // Female always sorted right
-      });
-    }
+    // 1 male target
+    trials.push({
+      major,
+      target: pickRandom(maleNames),
+      correctSide: 'left', // Male always sorted left
+    });
+    // 1 female target
+    trials.push({
+      major,
+      target: pickRandom(femaleNames),
+      correctSide: 'right', // Female always sorted right
+    });
   }
 
   return shuffle(trials);
