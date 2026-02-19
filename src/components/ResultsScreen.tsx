@@ -4,9 +4,10 @@ import type { ScoreResult } from '../utils/scoring';
 interface ResultsScreenProps {
   score: ScoreResult;
   onRetry: () => void;
+  onContinueToPriming?: () => void;
 }
 
-export default function ResultsScreen({ score, onRetry }: ResultsScreenProps) {
+export default function ResultsScreen({ score, onRetry, onContinueToPriming }: ResultsScreenProps) {
   const [animationStep, setAnimationStep] = useState(0);
 
   useEffect(() => {
@@ -121,15 +122,43 @@ export default function ResultsScreen({ score, onRetry }: ResultsScreenProps) {
         </div>
 
         <div
-          className="text-center transition-opacity duration-500"
+          className="transition-opacity duration-500"
           style={{ opacity: animationStep >= 4 ? 1 : 0 }}
         >
-          <button
-            onPointerDown={onRetry}
-            className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold text-lg px-8 py-4 rounded-xl transition-colors"
-          >
-            Try Again
-          </button>
+          {onContinueToPriming ? (
+            <div>
+              <p className="text-slate-400 text-sm text-center mb-4">What's next?</p>
+              <div className="space-y-3">
+                <button
+                  onPointerDown={onContinueToPriming}
+                  className="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-xl p-4 text-left transition-colors"
+                >
+                  <p className="text-violet-400 font-bold text-base">College Major Priming</p>
+                  <p className="text-slate-500 text-sm mt-1">
+                    See which majors you implicitly associate with each gender
+                  </p>
+                </button>
+                <button
+                  onPointerDown={onRetry}
+                  className="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-xl p-4 text-left transition-colors"
+                >
+                  <p className="text-blue-400 font-bold text-base">Retake Gender IAT</p>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Try the Boss Mode / Care Mode sorting task again
+                  </p>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <button
+                onPointerDown={onRetry}
+                className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold text-lg px-8 py-4 rounded-xl transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

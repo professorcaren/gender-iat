@@ -8,20 +8,48 @@ const HEADERS = [
   'app',
 ];
 
+const PRIMING_SHEET_NAME = 'Priming';
+const PRIMING_HEADERS = [
+  'submitted_at',
+  'major',
+  'mean_male_rt',
+  'mean_female_rt',
+  'diff',
+];
+
 function doPost(e) {
   try {
     const payload = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    const score = payload.score || {};
-    const sheet = getOrCreateSheet();
+    const app = String(payload.app || 'gender-iat');
 
-    sheet.appendRow([
-      new Date(),
-      asNumber(score.dScore),
-      asNumber(score.meanCongruent),
-      asNumber(score.meanIncongruent),
-      String(score.interpretation || ''),
-      String(payload.app || 'gender-iat'),
-    ]);
+    if (app === 'gender-iat-priming') {
+      const scores = payload.scores || [];
+      const sheet = getOrCreatePrimingSheet();
+      const now = new Date();
+
+      for (var i = 0; i < scores.length; i++) {
+        var s = scores[i];
+        sheet.appendRow([
+          now,
+          String(s.major || ''),
+          asNumber(s.meanMaleRT),
+          asNumber(s.meanFemaleRT),
+          asNumber(s.diff),
+        ]);
+      }
+    } else {
+      const score = payload.score || {};
+      const sheet = getOrCreateSheet();
+
+      sheet.appendRow([
+        new Date(),
+        asNumber(score.dScore),
+        asNumber(score.meanCongruent),
+        asNumber(score.meanIncongruent),
+        String(score.interpretation || ''),
+        app,
+      ]);
+    }
 
     return jsonOutput({ ok: true });
   } catch (error) {
@@ -75,6 +103,18 @@ function getOrCreateSheet() {
   }
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
+  }
+  return sheet;
+}
+
+function getOrCreatePrimingSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(PRIMING_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(PRIMING_SHEET_NAME);
+  }
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(PRIMING_HEADERS);
   }
   return sheet;
 }

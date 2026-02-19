@@ -81,6 +81,34 @@ function buildTrialList(pools: Stimulus[][], count: number): Stimulus[] {
 }
 
 export function getBlocks(): BlockConfig[] {
+  const congruent: BlockConfig = {
+    id: 3,
+    name: 'Combo Round',
+    trialCount: 20,
+    leftLabel: ['Male', 'Boss Mode'],
+    rightLabel: ['Female', 'Care Mode'],
+    leftCategories: ['male', 'boss'],
+    rightCategories: ['female', 'care'],
+    stimuli: buildTrialList([maleNames, femaleNames, bossWords, careWords], 20),
+    isPractice: false,
+  };
+
+  const incongruent: BlockConfig = {
+    id: 4,
+    name: 'Combo Round',
+    trialCount: 20,
+    leftLabel: ['Female', 'Boss Mode'],
+    rightLabel: ['Male', 'Care Mode'],
+    leftCategories: ['female', 'boss'],
+    rightCategories: ['male', 'care'],
+    stimuli: buildTrialList([maleNames, femaleNames, bossWords, careWords], 20),
+    isPractice: false,
+  };
+
+  const comboRounds = Math.random() < 0.5
+    ? [congruent, incongruent]
+    : [incongruent, congruent];
+
   return [
     {
       id: 1,
@@ -104,28 +132,7 @@ export function getBlocks(): BlockConfig[] {
       stimuli: buildTrialList([bossWords, careWords], 8),
       isPractice: true,
     },
-    {
-      id: 3,
-      name: 'Combo Round 1',
-      trialCount: 20,
-      leftLabel: ['Male', 'Boss Mode'],
-      rightLabel: ['Female', 'Care Mode'],
-      leftCategories: ['male', 'boss'],
-      rightCategories: ['female', 'care'],
-      stimuli: buildTrialList([maleNames, femaleNames, bossWords, careWords], 20),
-      isPractice: false,
-    },
-    {
-      id: 4,
-      name: 'Combo Round 2',
-      trialCount: 20,
-      leftLabel: ['Female', 'Boss Mode'],
-      rightLabel: ['Male', 'Care Mode'],
-      leftCategories: ['female', 'boss'],
-      rightCategories: ['male', 'care'],
-      stimuli: buildTrialList([maleNames, femaleNames, bossWords, careWords], 20),
-      isPractice: false,
-    },
+    ...comboRounds,
   ];
 }
 

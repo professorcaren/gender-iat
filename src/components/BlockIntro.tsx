@@ -2,10 +2,11 @@ import type { BlockConfig } from '../data/stimuli';
 
 interface BlockIntroProps {
   block: BlockConfig;
+  roundNumber: number;
   onStart: () => void;
 }
 
-export default function BlockIntro({ block, onStart }: BlockIntroProps) {
+export default function BlockIntro({ block, roundNumber, onStart }: BlockIntroProps) {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center bg-slate-900 cursor-pointer select-none px-6"
@@ -13,7 +14,7 @@ export default function BlockIntro({ block, onStart }: BlockIntroProps) {
     >
       <div className="max-w-sm w-full animate-fade-in text-center">
         <p className="text-slate-500 text-sm font-medium mb-2 uppercase tracking-wider">
-          Round {block.id} of 4
+          Round {roundNumber} of 4
         </p>
         <h2 className="text-3xl font-black text-white mb-8">
           {block.name}

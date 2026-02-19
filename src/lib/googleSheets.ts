@@ -1,4 +1,5 @@
 import type { ScoreResult } from '../utils/scoring';
+import type { PrimingMajorScore } from '../utils/primingScoring';
 
 export interface ClassSummary {
   count: number;
@@ -35,6 +36,27 @@ export async function submitScoreToSheet(score: ScoreResult): Promise<SubmitOutc
     app: 'gender-iat',
     completedAt: new Date().toISOString(),
     score,
+  };
+
+  await fetch(scriptUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  });
+
+  return 'submitted';
+}
+
+export async function submitPrimingScoreToSheet(scores: PrimingMajorScore[]): Promise<SubmitOutcome> {
+  const scriptUrl = getScriptUrl();
+  if (!scriptUrl) return 'disabled';
+
+  const payload = {
+    app: 'gender-iat-priming',
+    completedAt: new Date().toISOString(),
+    scores,
   };
 
   await fetch(scriptUrl, {

@@ -3,11 +3,12 @@ import type { TrialResult } from '../utils/scoring';
 interface BlockStatsProps {
   blockId: number;
   blockName: string;
+  roundNumber: number;
   results: TrialResult[];
   onContinue: () => void;
 }
 
-export default function BlockStats({ blockId, blockName, results, onContinue }: BlockStatsProps) {
+export default function BlockStats({ blockId, blockName, roundNumber, results, onContinue }: BlockStatsProps) {
   const blockResults = results.filter(r => r.blockId === blockId);
   const avgRT = Math.round(
     blockResults.reduce((sum, r) => sum + r.rt, 0) / blockResults.length
@@ -29,7 +30,7 @@ export default function BlockStats({ blockId, blockName, results, onContinue }: 
     >
       <div className="max-w-sm w-full text-center animate-fade-in">
         <p className="text-slate-500 text-sm uppercase tracking-wider mb-2">
-          Round {blockId} Complete
+          Round {roundNumber} Complete
         </p>
         <h2 className="text-2xl font-black text-white mb-8">
           {blockName}
@@ -55,7 +56,7 @@ export default function BlockStats({ blockId, blockName, results, onContinue }: 
         </p>
 
         <p className="text-blue-400 font-semibold animate-pulse">
-          {blockId < 4 ? 'Tap for next round' : 'Tap to see your results'}
+          {roundNumber < 4 ? 'Tap for next round' : 'Tap to see your results'}
         </p>
       </div>
     </div>
