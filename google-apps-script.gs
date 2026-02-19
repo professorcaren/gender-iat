@@ -83,9 +83,9 @@ function doGet(e) {
     });
   }
 
-  const avgDScore = average(rows.map(row => row.dScore));
-  const avgCongruentMs = average(rows.map(row => row.meanCongruentMs));
-  const avgIncongruentMs = average(rows.map(row => row.meanIncongruentMs));
+  const avgDScore = median(rows.map(row => row.dScore));
+  const avgCongruentMs = median(rows.map(row => row.meanCongruentMs));
+  const avgIncongruentMs = median(rows.map(row => row.meanIncongruentMs));
   const congruentFasterCount = rows.filter(
     row => row.meanCongruentMs < row.meanIncongruentMs
   ).length;
@@ -137,7 +137,7 @@ function handlePrimingSummary() {
     var diffs = byMajor[m];
     majors.push({
       major: m,
-      avgDiff: round(average(diffs), 1),
+      avgDiff: round(median(diffs), 1),
       count: diffs.length,
     });
   }
@@ -190,6 +190,15 @@ function readRows() {
       Number.isFinite(row.meanCongruentMs) &&
       Number.isFinite(row.meanIncongruentMs)
     );
+}
+
+function median(values) {
+  var valid = values.filter(function(v) { return Number.isFinite(v); });
+  if (valid.length === 0) return NaN;
+  valid.sort(function(a, b) { return a - b; });
+  var mid = Math.floor(valid.length / 2);
+  if (valid.length % 2 === 1) return valid[mid];
+  return (valid[mid - 1] + valid[mid]) / 2;
 }
 
 function average(values) {

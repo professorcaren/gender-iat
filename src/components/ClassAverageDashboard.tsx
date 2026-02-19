@@ -137,7 +137,7 @@ export default function ClassAverageDashboard() {
                 <p className="text-white text-3xl font-black">{summary?.count ?? '--'}</p>
               </div>
               <div className="bg-slate-800 rounded-2xl p-4">
-                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Average D-Score</p>
+                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Median D-Score</p>
                 <p className="text-white text-3xl font-black">{formatDScore(summary?.avgDScore ?? null)}</p>
               </div>
               <div className="bg-slate-800 rounded-2xl p-4">
@@ -147,11 +147,11 @@ export default function ClassAverageDashboard() {
             </div>
 
             <div className="bg-slate-800/60 rounded-2xl p-5 mb-6">
-              <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">Average Interpretation</p>
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">Median Interpretation</p>
               <p className="text-white text-xl font-bold">{describeAssociation(summary?.avgDScore ?? null)}</p>
               {diffMs !== null && (
                 <p className="text-slate-300 text-sm mt-2">
-                  Mean difference (Incongruent - Congruent): {diffMs} ms
+                  Median difference (Incongruent - Congruent): {diffMs} ms
                 </p>
               )}
               <p className="text-slate-300 text-sm mt-2">
@@ -160,7 +160,7 @@ export default function ClassAverageDashboard() {
             </div>
 
             <div className="bg-slate-800/60 rounded-2xl p-5 mb-6">
-              <h2 className="text-white text-sm font-bold mb-3">Average Sorting Speed (Overlap)</h2>
+              <h2 className="text-white text-sm font-bold mb-3">Median Sorting Speed (Overlap)</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div className="rounded-xl bg-slate-800 p-3">
                   <p className="text-blue-300 text-xs mb-1">Male+Boss / Female+Care</p>
@@ -215,9 +215,9 @@ export default function ClassAverageDashboard() {
 
             {primingSummary && primingSummary.majors.length > 0 ? (
               <div className="bg-slate-800/60 rounded-2xl p-5 mb-6">
-                <h2 className="text-white text-sm font-bold mb-2">Class Average: Gender Association by Major</h2>
+                <h2 className="text-white text-sm font-bold mb-2">Class Median: Gender Association by Major</h2>
                 <p className="text-slate-500 text-xs mb-4">
-                  Positive (blue) = class averaged faster sorting male names after this major.
+                  Positive (blue) = class median faster sorting male names after this major.
                   Negative (orange) = faster sorting female names.
                 </p>
 
