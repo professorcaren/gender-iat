@@ -47,10 +47,13 @@ function pickRandom<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
+const MAJORS_PER_SESSION = 10;
+
 export function generatePrimingTrials(): PrimingTrial[] {
+  const selected = shuffle(majors).slice(0, MAJORS_PER_SESSION);
   const trials: PrimingTrial[] = [];
 
-  for (const major of majors) {
+  for (const major of selected) {
     // 1 male target
     trials.push({
       major,
