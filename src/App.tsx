@@ -45,7 +45,6 @@ function App() {
 
   // Priming state
   const [primingTrials, setPrimingTrials] = useState<PrimingTrial[]>([]);
-  const [primingResults, setPrimingResults] = useState<PrimingTrialResult[]>([]);
   const [primingScores, setPrimingScores] = useState<PrimingMajorScore[]>([]);
   const [primingAttempt, setPrimingAttempt] = useState(0);
   const lastSubmittedPrimingRef = useRef<number>(0);
@@ -93,7 +92,6 @@ function App() {
     setCurrentBlockIndex(0);
     setAllResults([]);
     setPrimingTrials([]);
-    setPrimingResults([]);
     setPrimingScores([]);
     setScreen('splash');
   }, []);
@@ -101,7 +99,6 @@ function App() {
   // Priming handlers
   const handleStartPriming = useCallback(() => {
     setPrimingTrials(generatePrimingTrials());
-    setPrimingResults([]);
     setPrimingScores([]);
     setScreen('priming_intro');
   }, []);
@@ -111,7 +108,6 @@ function App() {
   }, []);
 
   const handlePrimingComplete = useCallback((results: PrimingTrialResult[]) => {
-    setPrimingResults(results);
     const scores = calculatePrimingScores(results);
     setPrimingScores(scores);
     setPrimingAttempt(n => n + 1);
