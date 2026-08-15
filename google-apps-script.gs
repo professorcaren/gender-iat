@@ -25,7 +25,10 @@ function doPost(e) {
     if (app === 'gender-iat-priming') {
       const scores = payload.scores || [];
       const sheet = getOrCreatePrimingSheet();
-      const now = new Date();
+      // ISO string (millisecond precision) so submissions are counted per-student:
+      // a plain Date loses its milliseconds under String() and would collide when
+      // two students finish in the same wall-clock second.
+      const now = new Date().toISOString();
 
       for (var i = 0; i < scores.length; i++) {
         var s = scores[i];
@@ -199,13 +202,6 @@ function median(values) {
   var mid = Math.floor(valid.length / 2);
   if (valid.length % 2 === 1) return valid[mid];
   return (valid[mid - 1] + valid[mid]) / 2;
-}
-
-function average(values) {
-  const valid = values.filter(v => Number.isFinite(v));
-  if (valid.length === 0) return NaN;
-  const total = valid.reduce((sum, value) => sum + value, 0);
-  return total / valid.length;
 }
 
 function round(value, digits) {

@@ -5,6 +5,7 @@ import {
   type ClassSummary,
   type PrimingClassSummary,
 } from '../lib/googleSheets';
+import { interpretAssociation } from '../utils/scoring';
 
 const REFRESH_INTERVAL_MS = 20000;
 
@@ -27,11 +28,7 @@ function formatPercent(value: number | null): string {
 
 function describeAssociation(value: number | null): string {
   if (value === null) return 'No data yet';
-  const absValue = Math.abs(value);
-  if (absValue < 0.15) return 'Little to no association';
-  if (absValue < 0.35) return 'Slight association';
-  if (absValue < 0.65) return 'Moderate association';
-  return 'Strong association';
+  return interpretAssociation(Math.abs(value));
 }
 
 function toWidth(value: number, maxValue: number): number {
@@ -47,19 +44,27 @@ export default function ClassAverageDashboard() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadSummary = useCallback(async () => {
-    try {
-      const [iatData, primingData] = await Promise.all([
-        fetchClassSummaryFromSheet(),
-        fetchPrimingSummaryFromSheet(),
-      ]);
-      setSummary(iatData);
-      setPrimingSummary(primingData);
+    // Fetch both summaries independently so a failure in one tab (e.g. a missing
+    // Priming sheet) doesn't blank the other tab's data.
+    const [iatResult, primingResult] = await Promise.allSettled([
+      fetchClassSummaryFromSheet(),
+      fetchPrimingSummaryFromSheet(),
+    ]);
+
+    if (iatResult.status === 'fulfilled') setSummary(iatResult.value);
+    if (primingResult.status === 'fulfilled') setPrimingSummary(primingResult.value);
+
+    const failure = [iatResult, primingResult].find(r => r.status === 'rejected') as
+      | PromiseRejectedResult
+      | undefined;
+    if (failure) {
+      const reason = failure.reason;
+      setErrorMessage(reason instanceof Error ? reason.message : 'Could not load summary');
+    } else {
       setErrorMessage(null);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Could not load summary');
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {

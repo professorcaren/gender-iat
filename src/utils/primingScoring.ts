@@ -4,7 +4,7 @@ export interface PrimingMajorScore {
   major: string;
   meanMaleRT: number;
   meanFemaleRT: number;
-  diff: number; // positive = male-associated (faster female RT → higher diff)
+  diff: number; // meanFemaleRT - meanMaleRT; positive = male-associated (faster male RT → higher diff)
 }
 
 function mean(values: number[]): number {
