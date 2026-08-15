@@ -49,7 +49,13 @@ function pickRandom<T>(array: T[]): T {
 
 const MAJORS_PER_SESSION = 10;
 
-export function generatePrimingTrials(): PrimingTrial[] {
+// `swapSides` is the per-student counterbalancing flag shared with the IAT
+// (see getBlocks). It keeps the Male/Female → left/right mapping identical to the
+// layout the student just used in the IAT, so there's no motor-mapping switch
+// carrying into this un-warmed-up task.
+export function generatePrimingTrials(swapSides = false): PrimingTrial[] {
+  const maleSide: 'left' | 'right' = swapSides ? 'right' : 'left';
+  const femaleSide: 'left' | 'right' = swapSides ? 'left' : 'right';
   const selected = shuffle(majors).slice(0, MAJORS_PER_SESSION);
   const trials: PrimingTrial[] = [];
 
@@ -58,13 +64,13 @@ export function generatePrimingTrials(): PrimingTrial[] {
     trials.push({
       major,
       target: pickRandom(maleNames),
-      correctSide: 'left', // Male always sorted left
+      correctSide: maleSide,
     });
     // 1 female target
     trials.push({
       major,
       target: pickRandom(femaleNames),
-      correctSide: 'right', // Female always sorted right
+      correctSide: femaleSide,
     });
   }
 

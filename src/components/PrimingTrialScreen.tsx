@@ -9,8 +9,12 @@ interface PrimingTrialScreenProps {
 type Phase = 'prime' | 'fixation' | 'target';
 type Feedback = 'correct' | 'incorrect' | null;
 
-const PRIME_DURATION = 650;
-const FIXATION_DURATION = 200;
+// Prime + fixation give the prime→target SOA. Kept short (~250ms) so this indexes
+// automatic/spontaneous association rather than deliberate, strategic processing
+// (which dominates at the long SOAs, ~800ms+, used previously). If long major
+// names feel unreadable at 200ms, nudge PRIME_DURATION up — at some cost to SOA.
+const PRIME_DURATION = 200;
+const FIXATION_DURATION = 50;
 const ERROR_PENALTY_MS = 600;
 
 export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialScreenProps) {
@@ -30,6 +34,11 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
   const totalTrials = trials.length;
   const currentTrial = trials[trialIndex];
   const progress = trialIndex / totalTrials;
+
+  // Which side is "Male" this session — inferred from the trials so the labels
+  // match the per-student side counterbalancing (shared with the IAT layout).
+  const maleOnLeft =
+    (trials.find(t => t.target.category === 'male')?.correctSide ?? 'left') === 'left';
 
   // Run prime → fixation → target sequence
   useEffect(() => {
@@ -150,8 +159,17 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
       {/* Labels (only visible during target phase) */}
       {phase === 'target' && (
         <div className="absolute top-4 left-4 right-4 flex justify-between z-20 pointer-events-none">
-          <p className="text-blue-400 font-bold text-sm">Male</p>
-          <p className="text-orange-400 font-bold text-sm">Female</p>
+          {maleOnLeft ? (
+            <>
+              <p className="text-blue-400 font-bold text-sm">Male</p>
+              <p className="text-orange-400 font-bold text-sm">Female</p>
+            </>
+          ) : (
+            <>
+              <p className="text-orange-400 font-bold text-sm">Female</p>
+              <p className="text-blue-400 font-bold text-sm">Male</p>
+            </>
+          )}
         </div>
       )}
 

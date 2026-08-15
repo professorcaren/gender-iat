@@ -31,10 +31,14 @@ function describeAssociation(value: number | null): string {
   return interpretAssociation(Math.abs(value));
 }
 
-function toWidth(value: number, maxValue: number): number {
-  if (maxValue <= 0) return 0;
-  return Math.max(12, (value / (maxValue * 1.15)) * 100);
-}
+// The four combined-block pairing cells, congruent pair first. `pairing` drives
+// the dot colour so the two stereotype-consistent cells read together.
+const CELLS = [
+  { key: 'maleBoss', label: 'Male + Boss', pairing: 'congruent' },
+  { key: 'femaleCare', label: 'Female + Care', pairing: 'congruent' },
+  { key: 'femaleBoss', label: 'Female + Boss', pairing: 'incongruent' },
+  { key: 'maleCare', label: 'Male + Care', pairing: 'incongruent' },
+] as const;
 
 export default function ClassAverageDashboard() {
   const [tab, setTab] = useState<Tab>('iat');
@@ -83,15 +87,20 @@ export default function ClassAverageDashboard() {
     return Math.round(summary.avgIncongruentMs - summary.avgCongruentMs);
   }, [summary]);
 
-  const maxMean = useMemo(() => {
-    if (!summary || summary.avgCongruentMs === null || summary.avgIncongruentMs === null) {
-      return 0;
-    }
-    return Math.max(summary.avgCongruentMs, summary.avgIncongruentMs);
+  // Per-cell dot-plot rows (median + IQR) sharing one x-scale. Null when the
+  // Apps Script deployment predates the cell columns (no `cells` in the payload).
+  const cellChart = useMemo(() => {
+    const cells = summary?.cells;
+    if (!cells) return null;
+    const rows = CELLS.map(c => ({ ...c, ...cells[c.key] }));
+    const hasData = rows.some(r => r.median !== null);
+    const xMax = Math.max(...rows.flatMap(r => [r.median ?? 0, r.p75 ?? 0]), 1);
+    return { rows, hasData, xMax };
   }, [summary]);
 
-  const congruentMean = summary?.avgCongruentMs ?? null;
-  const incongruentMean = summary?.avgIncongruentMs ?? null;
+  const chanceExcess = summary?.congruentFasterPct != null
+    ? summary.congruentFasterPct - 50
+    : null;
 
   const maxAbsDiff = useMemo(() => {
     if (!primingSummary || primingSummary.majors.length === 0) return 1;
@@ -146,8 +155,9 @@ export default function ClassAverageDashboard() {
                 <p className="text-white text-3xl font-black">{formatDScore(summary?.avgDScore ?? null)}</p>
               </div>
               <div className="bg-slate-800 rounded-2xl p-4">
-                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Male–Career Bias</p>
+                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">% Faster on Congruent</p>
                 <p className="text-white text-3xl font-black">{formatPercent(summary?.congruentFasterPct ?? null)}</p>
+                <p className="text-slate-500 text-[11px] mt-1">50% = chance</p>
               </div>
             </div>
 
@@ -156,50 +166,97 @@ export default function ClassAverageDashboard() {
               <p className="text-white text-xl font-bold">{describeAssociation(summary?.avgDScore ?? null)}</p>
               {diffMs !== null && (
                 <p className="text-slate-300 text-sm mt-2">
-                  Median difference (Incongruent - Congruent): {diffMs} ms
+                  Difference of median RTs (Incongruent − Congruent): {diffMs} ms
                 </p>
               )}
-              <p className="text-slate-300 text-sm mt-2">
-                Faster on congruent pairing: {formatPercent(summary?.congruentFasterPct ?? null)}
-              </p>
+              {summary?.congruentFasterPct != null && chanceExcess !== null && (
+                <p className="text-slate-300 text-sm mt-2">
+                  {formatPercent(summary.congruentFasterPct)} of students sorted the congruent pairing
+                  faster{' '}
+                  <span className="text-slate-400">
+                    ({chanceExcess >= 0 ? '+' : ''}{chanceExcess.toFixed(1)} pts vs. the 50% expected by chance).
+                  </span>
+                </p>
+              )}
             </div>
 
             <div className="bg-slate-800/60 rounded-2xl p-5 mb-6">
-              <h2 className="text-white text-sm font-bold mb-3">Median Sorting Speed (Overlap)</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="rounded-xl bg-slate-800 p-3">
-                  <p className="text-blue-300 text-xs mb-1">Male+Boss / Female+Care</p>
-                  <p className="text-white font-bold">{formatMs(summary?.avgCongruentMs ?? null)}</p>
-                </div>
-                <div className="rounded-xl bg-slate-800 p-3">
-                  <p className="text-orange-300 text-xs mb-1">Female+Boss / Male+Care</p>
-                  <p className="text-white font-bold">{formatMs(summary?.avgIncongruentMs ?? null)}</p>
-                </div>
-              </div>
+              <h2 className="text-white text-sm font-bold mb-1">Median Sorting Speed by Pairing</h2>
+              <p className="text-slate-500 text-xs mb-4">
+                Dot = class median · bar = middle 50% of students (IQR). Slower cells sit further right.
+              </p>
 
-              <div className="relative h-16 rounded-xl overflow-hidden bg-slate-700/40 border border-slate-600/60">
-                <div
-                  className="absolute left-0 top-0 h-full bg-blue-500/70 transition-all duration-500"
-                  style={{
-                    width: congruentMean !== null && maxMean > 0
-                      ? `${toWidth(congruentMean, maxMean)}%`
-                      : '0%',
-                  }}
-                />
-                <div
-                  className="absolute left-0 top-0 h-full bg-orange-500/60 transition-all duration-500 mix-blend-screen"
-                  style={{
-                    width: incongruentMean !== null && maxMean > 0
-                      ? `${toWidth(incongruentMean, maxMean)}%`
-                      : '0%',
-                  }}
-                />
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-              </div>
-              <div className="flex justify-between text-[11px] text-slate-400 mt-2">
-                <span>0 ms</span>
-                <span>{maxMean > 0 ? `${Math.round(maxMean)} ms` : '--'}</span>
-              </div>
+              {cellChart && cellChart.hasData ? (
+                <>
+                  <div className="space-y-3">
+                    {cellChart.rows.map((row) => {
+                      const scale = cellChart.xMax * 1.1;
+                      const pct = (v: number | null) =>
+                        v === null ? null : Math.min(100, Math.max(0, (v / scale) * 100));
+                      const medianPct = pct(row.median);
+                      const p25Pct = pct(row.p25);
+                      const p75Pct = pct(row.p75);
+                      const isCongruent = row.pairing === 'congruent';
+                      const dotColor = isCongruent ? 'bg-blue-400' : 'bg-orange-400';
+                      const barColor = isCongruent ? 'bg-blue-500/40' : 'bg-orange-500/40';
+
+                      return (
+                        <div key={row.key} className="flex items-center gap-3">
+                          <div className="w-[110px] flex-shrink-0 text-right">
+                            <p className="text-slate-200 text-xs font-medium truncate">{row.label}</p>
+                            <p className="text-slate-500 text-[10px]">n={row.count}</p>
+                          </div>
+                          <div className="flex-1 relative h-6">
+                            {/* baseline track */}
+                            <div className="absolute inset-x-0 top-1/2 h-px bg-slate-700" />
+                            {medianPct === null ? (
+                              <p className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-600 text-[11px]">
+                                no data
+                              </p>
+                            ) : (
+                              <>
+                                {p25Pct !== null && p75Pct !== null && (
+                                  <div
+                                    className={`absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full ${barColor}`}
+                                    style={{ left: `${p25Pct}%`, width: `${Math.max(0, p75Pct - p25Pct)}%` }}
+                                  />
+                                )}
+                                <div
+                                  className={`absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-slate-900 ${dotColor}`}
+                                  style={{ left: `${medianPct}%` }}
+                                />
+                              </>
+                            )}
+                          </div>
+                          <div className="w-[48px] flex-shrink-0 text-right">
+                            <p className="text-slate-300 text-xs font-mono">{formatMs(row.median)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mt-3 pl-[122px]">
+                    <span>0 ms</span>
+                    <span>{Math.round(cellChart.xMax * 1.1)} ms</span>
+                  </div>
+                  <div className="flex items-center gap-5 mt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                      <span className="text-slate-400 text-[11px]">Congruent pairing</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-orange-400" />
+                      <span className="text-slate-400 text-[11px]">Incongruent pairing</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-slate-400 text-sm">
+                  {cellChart
+                    ? 'No per-cell data yet. Students need to submit responses from the updated app.'
+                    : 'Per-cell speed needs the updated Apps Script deployment (it now returns each pairing’s median).'}
+                </p>
+              )}
             </div>
           </>
         )}

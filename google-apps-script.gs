@@ -6,7 +6,14 @@ const HEADERS = [
   'mean_incongruent_ms',
   'interpretation',
   'app',
+  'male_boss_ms',
+  'female_care_ms',
+  'female_boss_ms',
+  'male_care_ms',
 ];
+
+// The four combined-block pairing cells, in display order (congruent pair first).
+const CELL_KEYS = ['maleBoss', 'femaleCare', 'femaleBoss', 'maleCare'];
 
 const PRIMING_SHEET_NAME = 'Priming';
 const PRIMING_HEADERS = [
@@ -42,6 +49,7 @@ function doPost(e) {
       }
     } else {
       const score = payload.score || {};
+      const cells = score.cellMedians || {};
       const sheet = getOrCreateSheet();
 
       sheet.appendRow([
@@ -51,6 +59,10 @@ function doPost(e) {
         asNumber(score.meanIncongruent),
         String(score.interpretation || ''),
         app,
+        asNumber(cells.maleBoss),
+        asNumber(cells.femaleCare),
+        asNumber(cells.femaleBoss),
+        asNumber(cells.maleCare),
       ]);
     }
 
@@ -82,6 +94,7 @@ function doGet(e) {
       avgCongruentMs: null,
       avgIncongruentMs: null,
       congruentFasterPct: null,
+      cells: emptyCellStats(),
       generatedAt: new Date().toISOString(),
     });
   }
@@ -99,6 +112,7 @@ function doGet(e) {
     avgCongruentMs: round(avgCongruentMs, 1),
     avgIncongruentMs: round(avgIncongruentMs, 1),
     congruentFasterPct: round((congruentFasterCount / rows.length) * 100, 1),
+    cells: cellStats(rows),
     generatedAt: new Date().toISOString(),
   });
 }
@@ -187,12 +201,60 @@ function readRows() {
       dScore: asNumber(row[1]),
       meanCongruentMs: asNumber(row[2]),
       meanIncongruentMs: asNumber(row[3]),
+      // Cell medians (columns 6-9) are absent on rows submitted before this
+      // change; asNumber() yields null and the per-cell stats skip them.
+      maleBoss: asNumber(row[6]),
+      femaleCare: asNumber(row[7]),
+      femaleBoss: asNumber(row[8]),
+      maleCare: asNumber(row[9]),
     }))
     .filter(row =>
       Number.isFinite(row.dScore) &&
       Number.isFinite(row.meanCongruentMs) &&
       Number.isFinite(row.meanIncongruentMs)
     );
+}
+
+// Per-cell class summary: median + interquartile range across students, plus how
+// many students contributed a value for that cell.
+function cellStats(rows) {
+  var out = {};
+  for (var c = 0; c < CELL_KEYS.length; c++) {
+    var key = CELL_KEYS[c];
+    var vals = [];
+    for (var i = 0; i < rows.length; i++) {
+      if (Number.isFinite(rows[i][key])) vals.push(rows[i][key]);
+    }
+    out[key] = {
+      median: round(median(vals), 1),
+      p25: round(quantile(vals, 0.25), 1),
+      p75: round(quantile(vals, 0.75), 1),
+      count: vals.length,
+    };
+  }
+  return out;
+}
+
+function emptyCellStats() {
+  var out = {};
+  for (var c = 0; c < CELL_KEYS.length; c++) {
+    out[CELL_KEYS[c]] = { median: null, p25: null, p75: null, count: 0 };
+  }
+  return out;
+}
+
+// Linear-interpolation quantile (same convention as most stats packages).
+function quantile(values, q) {
+  var valid = values.filter(function(v) { return Number.isFinite(v); });
+  if (valid.length === 0) return NaN;
+  valid.sort(function(a, b) { return a - b; });
+  if (valid.length === 1) return valid[0];
+  var pos = (valid.length - 1) * q;
+  var base = Math.floor(pos);
+  var rest = pos - base;
+  return valid[base + 1] !== undefined
+    ? valid[base] + rest * (valid[base + 1] - valid[base])
+    : valid[base];
 }
 
 function median(values) {

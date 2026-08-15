@@ -1,8 +1,11 @@
 interface PrimingIntroProps {
   onContinue: () => void;
+  maleOnLeft: boolean;
 }
 
-export default function PrimingIntro({ onContinue }: PrimingIntroProps) {
+export default function PrimingIntro({ onContinue, maleOnLeft }: PrimingIntroProps) {
+  const male = <span className="text-blue-400 font-semibold">{maleOnLeft ? 'left' : 'right'}</span>;
+  const female = <span className="text-orange-400 font-semibold">{maleOnLeft ? 'right' : 'left'}</span>;
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center bg-slate-900 cursor-pointer select-none px-6"
@@ -31,9 +34,8 @@ export default function PrimingIntro({ onContinue }: PrimingIntroProps) {
               <span className="text-violet-400 font-bold text-lg">2</span>
             </div>
             <p className="text-slate-300 text-base pt-1.5">
-              Then a name appears — sort it by tapping
-              the <span className="text-blue-400 font-semibold">left</span> (Male)
-              or <span className="text-orange-400 font-semibold">right</span> (Female) side
+              Then a name appears — sort it by tapping the {male} (Male)
+              or {female} (Female) side
             </p>
           </div>
 

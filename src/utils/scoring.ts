@@ -7,6 +7,15 @@ export interface TrialResult {
   blockId: number;
 }
 
+// Median trimmed RT for each of the four combined-block pairing cells. Null when
+// a cell has no valid trials. Submitted so the class dashboard can plot all four.
+export interface CellMedians {
+  maleBoss: number | null;   // congruent block, Male names + Boss words
+  femaleCare: number | null; // congruent block, Female names + Care words
+  femaleBoss: number | null; // incongruent block, Female names + Boss words
+  maleCare: number | null;   // incongruent block, Male names + Care words
+}
+
 export interface ScoreResult {
   meanCongruent: number;
   meanIncongruent: number;
@@ -15,10 +24,36 @@ export interface ScoreResult {
   interpretation: string;
   description: string;
   fasterPairing: 'congruent' | 'incongruent' | 'none';
+  cellMedians: CellMedians;
 }
 
 function mean(values: number[]): number {
   return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+// Median trimmed RT for one pairing cell = trials in `blockId` whose category is
+// one of `categories`. Rounded; null when the cell is empty after trimming.
+function cellMedian(
+  trials: TrialResult[],
+  blockId: number,
+  categories: string[],
+): number | null {
+  const rts = trimRTs(
+    trials
+      .filter(t => t.blockId === blockId && categories.includes(t.category))
+      .map(t => t.rt),
+  );
+  const m = median(rts);
+  return m === null ? null : Math.round(m);
 }
 
 function stdDev(values: number[]): number {
@@ -93,6 +128,13 @@ export function calculateScore(trials: TrialResult[]): ScoreResult {
     description = `You sorted ${absDiff}ms faster when Female was paired with Boss Mode and Male with Care Mode. This suggests a ${interpretation.toLowerCase()} running counter to the typical cultural pattern.`;
   }
 
+  const cellMedians: CellMedians = {
+    maleBoss: cellMedian(trials, 3, ['male', 'boss']),
+    femaleCare: cellMedian(trials, 3, ['female', 'care']),
+    femaleBoss: cellMedian(trials, 4, ['female', 'boss']),
+    maleCare: cellMedian(trials, 4, ['male', 'care']),
+  };
+
   return {
     meanCongruent,
     meanIncongruent,
@@ -101,5 +143,6 @@ export function calculateScore(trials: TrialResult[]): ScoreResult {
     interpretation,
     description,
     fasterPairing,
+    cellMedians,
   };
 }
