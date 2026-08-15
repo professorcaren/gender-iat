@@ -35,6 +35,15 @@ function trimRTs(rts: number[]): number[] {
     .map(rt => Math.min(rt, 3000));
 }
 
+// Association strength bands, keyed on |D|. Shared so the student results screen
+// and the instructor dashboard never drift apart.
+export function interpretAssociation(absD: number): string {
+  if (absD < 0.15) return 'Little to no association';
+  if (absD < 0.35) return 'Slight association';
+  if (absD < 0.65) return 'Moderate association';
+  return 'Strong association';
+}
+
 export function calculateScore(trials: TrialResult[]): ScoreResult {
   // Block 3 = congruent (Male+Boss / Female+Care)
   // Block 4 = incongruent (Female+Boss / Male+Care)
@@ -46,39 +55,36 @@ export function calculateScore(trials: TrialResult[]): ScoreResult {
     trials.filter(t => t.blockId === 4).map(t => t.rt)
   );
 
-  const meanCongruent = Math.round(mean(congruentRTs));
-  const meanIncongruent = Math.round(mean(incongruentRTs));
+  // A block can be emptied by trimming (e.g. every tap under 300ms), which would
+  // make mean() return NaN. Fall back to a neutral "no data" score in that case.
+  const rawCongruent = congruentRTs.length > 0 ? mean(congruentRTs) : NaN;
+  const rawIncongruent = incongruentRTs.length > 0 ? mean(incongruentRTs) : NaN;
+  const hasData = Number.isFinite(rawCongruent) && Number.isFinite(rawIncongruent);
+
+  const meanCongruent = hasData ? Math.round(rawCongruent) : 0;
+  const meanIncongruent = hasData ? Math.round(rawIncongruent) : 0;
 
   // Pooled SD across both blocks
   const allComboRTs = [...congruentRTs, ...incongruentRTs];
   const pooledSD = stdDev(allComboRTs);
 
   // D-score: positive = faster when congruent (Male+Boss)
-  const dScore = pooledSD > 0
-    ? (mean(incongruentRTs) - mean(congruentRTs)) / pooledSD
+  const dScore = hasData && pooledSD > 0
+    ? (rawIncongruent - rawCongruent) / pooledSD
     : 0;
 
-  const diffMs = meanIncongruent - meanCongruent;
+  const diffMs = hasData ? meanIncongruent - meanCongruent : 0;
   const absDiff = Math.abs(diffMs);
   const absD = Math.abs(dScore);
 
-  let interpretation: string;
-  if (absD < 0.15) {
-    interpretation = 'Little to no association';
-  } else if (absD < 0.35) {
-    interpretation = 'Slight association';
-  } else if (absD < 0.65) {
-    interpretation = 'Moderate association';
-  } else {
-    interpretation = 'Strong association';
-  }
+  const interpretation = interpretAssociation(absD);
 
   let fasterPairing: 'congruent' | 'incongruent' | 'none';
   let description: string;
 
   if (absD < 0.15) {
     fasterPairing = 'none';
-    description = `Your sorting speed was about the same for both pairings (${absDiff}ms difference). You showed little to no implicit association between gender and these roles.`;
+    description = `Your sorting speeds were about the same for both pairings — a ${absDiff}ms difference, small enough to reflect chance rather than a real association. You showed little to no implicit association between gender and these roles.`;
   } else if (dScore > 0) {
     fasterPairing = 'congruent';
     description = `You sorted ${absDiff}ms faster when Male was paired with Boss Mode and Female with Care Mode. This suggests a ${interpretation.toLowerCase()} between male and career/leadership and female and caregiving.`;

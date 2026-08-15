@@ -19,12 +19,17 @@ export default function TrialScreen({ block, onBlockComplete }: TrialScreenProps
   const [waitingCorrect, setWaitingCorrect] = useState(false);
   const trialStartRef = useRef<number>(0);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Synchronous re-entrancy lock. State guards (feedback/waitingCorrect) can't
+  // block two pointerdown events that fire before React re-renders, so a ref is
+  // required to stop simultaneous taps from double-advancing or double-recording.
+  const inputLockRef = useRef(false);
 
   const currentStimulus = block.stimuli[trialIndex];
   const progress = trialIndex / block.trialCount;
 
   useEffect(() => {
     trialStartRef.current = performance.now();
+    inputLockRef.current = false;
   }, [trialIndex]);
 
   useEffect(() => {
@@ -39,10 +44,16 @@ export default function TrialScreen({ block, onBlockComplete }: TrialScreenProps
   }, [block.leftCategories, block.rightCategories]);
 
   const handleTap = useCallback((side: 'left' | 'right') => {
+    if (inputLockRef.current) return; // a tap is already being processed
     if (feedback === 'correct') return; // still showing correct feedback
 
     const stimulus = block.stimuli[trialIndex];
     if (!stimulus) return;
+
+    // Consume this tap: block any simultaneous second pointerdown until we're
+    // ready for the next input (advance clears it via the trialIndex effect;
+    // the incorrect-flash timeouts clear it so the user can retry).
+    inputLockRef.current = true;
 
     if (waitingCorrect) {
       // After an error, they must tap the correct side
@@ -67,6 +78,7 @@ export default function TrialScreen({ block, onBlockComplete }: TrialScreenProps
         if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         feedbackTimeoutRef.current = setTimeout(() => {
           setFeedback(null);
+          inputLockRef.current = false; // allow another retry tap
         }, 300);
       }
       return;
@@ -106,6 +118,7 @@ export default function TrialScreen({ block, onBlockComplete }: TrialScreenProps
 
       feedbackTimeoutRef.current = setTimeout(() => {
         setFeedback(null);
+        inputLockRef.current = false; // allow the corrective tap
       }, 400);
     }
   }, [trialIndex, feedback, waitingCorrect, block, results, isCorrectSide, onBlockComplete]);

@@ -22,6 +22,10 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
   const targetStartRef = useRef<number>(0);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Synchronous re-entrancy lock: stops two simultaneous pointerdown events from
+  // double-advancing or double-recording before React re-renders (state guards
+  // can't block within a single synchronous event burst).
+  const inputLockRef = useRef(false);
 
   const totalTrials = trials.length;
   const currentTrial = trials[trialIndex];
@@ -32,6 +36,7 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
     setPhase('prime');
     setFeedback(null);
     setWaitingCorrect(false);
+    inputLockRef.current = false;
 
     phaseTimerRef.current = setTimeout(() => {
       setPhase('fixation');
@@ -63,10 +68,16 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
 
   const handleTap = useCallback((side: 'left' | 'right') => {
     if (phase !== 'target') return;
+    if (inputLockRef.current) return; // a tap is already being processed
     if (feedback === 'correct') return;
 
     const trial = trials[trialIndex];
     if (!trial) return;
+
+    // Consume this tap: block a simultaneous second pointerdown. The advance
+    // path clears the lock via the trialIndex effect; the incorrect-flash
+    // timeouts clear it so the user can retry.
+    inputLockRef.current = true;
 
     if (waitingCorrect) {
       if (side === trial.correctSide) {
@@ -83,6 +94,7 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
         if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         feedbackTimerRef.current = setTimeout(() => {
           setFeedback(null);
+          inputLockRef.current = false; // allow another retry tap
         }, 300);
       }
       return;
@@ -118,6 +130,7 @@ export default function PrimingTrialScreen({ trials, onComplete }: PrimingTrialS
 
       feedbackTimerRef.current = setTimeout(() => {
         setFeedback(null);
+        inputLockRef.current = false; // allow the corrective tap
       }, 400);
     }
   }, [phase, feedback, waitingCorrect, trialIndex, trials, results, advanceToNext]);
