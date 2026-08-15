@@ -1,12 +1,24 @@
 import type { ScoreResult } from '../utils/scoring';
 import type { PrimingMajorScore } from '../utils/primingScoring';
 
+export interface CellStat {
+  median: number | null;
+  p25: number | null;
+  p75: number | null;
+  count: number;
+}
+
+export type CellKey = 'maleBoss' | 'femaleCare' | 'femaleBoss' | 'maleCare';
+
+export type CellStats = Record<CellKey, CellStat>;
+
 export interface ClassSummary {
   count: number;
   avgDScore: number | null;
   avgCongruentMs: number | null;
   avgIncongruentMs: number | null;
   congruentFasterPct: number | null;
+  cells: CellStats | null;
   generatedAt: string | null;
 }
 
@@ -136,6 +148,27 @@ export async function fetchClassSummaryFromSheet(): Promise<ClassSummary> {
     avgCongruentMs: toNumberOrNull(data.avgCongruentMs),
     avgIncongruentMs: toNumberOrNull(data.avgIncongruentMs),
     congruentFasterPct: toNumberOrNull(data.congruentFasterPct),
+    cells: parseCellStats(data.cells),
     generatedAt: typeof data.generatedAt === 'string' ? data.generatedAt : null,
   };
+}
+
+const CELL_KEYS: CellKey[] = ['maleBoss', 'femaleCare', 'femaleBoss', 'maleCare'];
+
+// Returns null when the endpoint (an older Apps Script deployment) omits `cells`
+// entirely, so the dashboard can fall back to the legacy bar view.
+function parseCellStats(raw: unknown): CellStats | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const source = raw as Record<string, unknown>;
+  const result = {} as CellStats;
+  for (const key of CELL_KEYS) {
+    const cell = (source[key] ?? {}) as Record<string, unknown>;
+    result[key] = {
+      median: toNumberOrNull(cell.median),
+      p25: toNumberOrNull(cell.p25),
+      p75: toNumberOrNull(cell.p75),
+      count: Math.max(0, Math.round(toNumberOrNull(cell.count) ?? 0)),
+    };
+  }
+  return result;
 }

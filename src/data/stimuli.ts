@@ -80,7 +80,22 @@ function buildTrialList(pools: Stimulus[][], count: number): Stimulus[] {
   return trials.slice(0, count);
 }
 
-export function getBlocks(): BlockConfig[] {
+// Mirror a block's left/right sides. Used for per-student side counterbalancing:
+// the pairings are unchanged (congruent stays congruent), only which side they
+// sit on flips. Scoring keys on blockId + category, so D-scores are unaffected.
+function mirrorBlock(b: BlockConfig): BlockConfig {
+  return {
+    ...b,
+    leftLabel: b.rightLabel,
+    rightLabel: b.leftLabel,
+    leftCategories: b.rightCategories,
+    rightCategories: b.leftCategories,
+  };
+}
+
+// `swapSides` should be one random value per student, shared with the priming
+// task, so a student sees the same Male/Female → left/right layout throughout.
+export function getBlocks(swapSides = false): BlockConfig[] {
   const congruent: BlockConfig = {
     id: 3,
     name: 'Combo Round',
@@ -109,7 +124,7 @@ export function getBlocks(): BlockConfig[] {
     ? [congruent, incongruent]
     : [incongruent, congruent];
 
-  return [
+  const blocks: BlockConfig[] = [
     {
       id: 1,
       name: 'Practice: Names',
@@ -134,6 +149,8 @@ export function getBlocks(): BlockConfig[] {
     },
     ...comboRounds,
   ];
+
+  return swapSides ? blocks.map(mirrorBlock) : blocks;
 }
 
 export function getCategoryColor(category: CategoryType): string {

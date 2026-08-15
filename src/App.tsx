@@ -39,7 +39,10 @@ function App() {
   const [screen, setScreen] = useState<Screen>('splash');
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [allResults, setAllResults] = useState<TrialResult[]>([]);
-  const [blocks, setBlocks] = useState<BlockConfig[]>(() => getBlocks());
+  // One per-student side-counterbalancing flip, shared by the IAT and the priming
+  // task so the Male/Female → left/right layout stays constant across the session.
+  const [swapSides] = useState(() => Math.random() < 0.5);
+  const [blocks, setBlocks] = useState<BlockConfig[]>(() => getBlocks(swapSides));
   const [attemptNumber, setAttemptNumber] = useState(0);
   const lastSubmittedAttemptRef = useRef<number>(0);
 
@@ -88,20 +91,20 @@ function App() {
   }, [currentBlockIndex]);
 
   const handleRetry = useCallback(() => {
-    setBlocks(getBlocks());
+    setBlocks(getBlocks(swapSides));
     setCurrentBlockIndex(0);
     setAllResults([]);
     setPrimingTrials([]);
     setPrimingScores([]);
     setScreen('splash');
-  }, []);
+  }, [swapSides]);
 
   // Priming handlers
   const handleStartPriming = useCallback(() => {
-    setPrimingTrials(generatePrimingTrials());
+    setPrimingTrials(generatePrimingTrials(swapSides));
     setPrimingScores([]);
     setScreen('priming_intro');
-  }, []);
+  }, [swapSides]);
 
   const handlePrimingIntroDone = useCallback(() => {
     setScreen('priming_trials');
@@ -176,7 +179,7 @@ function App() {
         />
       )}
       {screen === 'priming_intro' && (
-        <PrimingIntro onContinue={handlePrimingIntroDone} />
+        <PrimingIntro onContinue={handlePrimingIntroDone} maleOnLeft={!swapSides} />
       )}
       {screen === 'priming_trials' && primingTrials.length > 0 && (
         <PrimingTrialScreen
