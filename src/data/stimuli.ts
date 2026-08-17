@@ -124,18 +124,29 @@ export function getBlocks(swapSides = false): BlockConfig[] {
     ? [congruent, incongruent]
     : [incongruent, congruent];
 
+  const namesPractice: BlockConfig = {
+    id: 1,
+    name: 'Practice: Names',
+    trialCount: 8,
+    leftLabel: ['Male'],
+    rightLabel: ['Female'],
+    leftCategories: ['male'],
+    rightCategories: ['female'],
+    stimuli: buildTrialList([maleNames, femaleNames], 8),
+    isPractice: true,
+  };
+
   const blocks: BlockConfig[] = [
-    {
-      id: 1,
-      name: 'Practice: Names',
-      trialCount: 8,
-      leftLabel: ['Male'],
-      rightLabel: ['Female'],
-      leftCategories: ['male'],
-      rightCategories: ['female'],
-      stimuli: buildTrialList([maleNames, femaleNames], 8),
-      isPractice: true,
-    },
+    // Counterbalance the names practice INDEPENDENTLY of swapSides. The congruent
+    // and incongruent combined blocks keep Boss/Care on the same side, so the only
+    // familiarity difference between them is the name mapping: whichever combined
+    // block reuses the practiced Male/Female sides gets a speed boost unrelated to
+    // implicit association. Flipping just this block for half of students makes the
+    // practiced mapping align with congruent for 50% and incongruent for 50%, so the
+    // artifact cancels in class-level aggregates (individual D-scores stay biased,
+    // which is fine — individuals are never reported). Block 1 is practice and not
+    // scored, so mirroring its sides has no effect on the scoring pipeline.
+    Math.random() < 0.5 ? mirrorBlock(namesPractice) : namesPractice,
     {
       id: 2,
       name: 'Practice: Words',

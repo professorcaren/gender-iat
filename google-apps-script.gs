@@ -273,6 +273,11 @@ function round(value, digits) {
 }
 
 function asNumber(value) {
+  // Treat blank cells as missing, not 0. Rows submitted before the cell columns
+  // existed have empty strings there once the sheet grows those columns, and
+  // Number('') is 0 (finite) — which would wrongly count old rows as 0 ms and
+  // flatten every per-cell median. null makes cellStats() skip them instead.
+  if (value === '' || value === null || value === undefined) return null;
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
 }
